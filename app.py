@@ -1,18 +1,27 @@
 
-import streamlit as st
+import io
 import pickle
-import docx  # Extract text from Word file
-import PyPDF2  # Extract text from PDF
 import re
-import nltk
 
-nltk.download('punkt')
-nltk.download('stopwords')
+import streamlit as st
+from pypdf import PdfReader
 
 #lodading models
 
 clf= pickle.load(open('clf.pkl','rb'))
 tfidf = pickle.load(open('tfidf.pkl', 'rb'))
+
+def extract_text(uploaded_file):
+    """Pull plain text out of an uploaded PDF or text file."""
+    data = uploaded_file.read()
+    if uploaded_file.name.lower().endswith('.pdf'):
+        reader = PdfReader(io.BytesIO(data))
+        return "\n".join((page.extract_text() or "") for page in reader.pages)
+    try:
+        return data.decode('utf-8')
+    except UnicodeDecodeError:
+        return data.decode('latin-1')
+
 
 def cleanResume(txt):
     # remove urls
@@ -40,18 +49,16 @@ def main():
     uploaded_file=st.file_uploader("Upload Resume ", type=['txt','pdf'])
 
     if uploaded_file is not None:
-        try:
-            resume_bytes = uploaded_file.read()
-            resume_text = resume_bytes.decode('utf-8')
-        except UnicodeDecodeError:
-            resume_text=resume_bytes.decode('latin-1')
+        resume_text = extract_text(uploaded_file)
+        if not resume_text.strip():
+            st.error("Could not read any text from that file. "
+                     "If it is a scanned PDF, try a text-based PDF or a .txt file.")
+            return
 
 
         cleaned_resume = cleanResume(resume_text)
         cleaned_resume = tfidf.transform([cleaned_resume])
         prediction_id = clf.predict(cleaned_resume)[0]
-        st.write(prediction_id)
-
         # Map category ID to category name
         category_mapping = {
             6: 'Data Science',
