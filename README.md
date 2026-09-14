@@ -7,7 +7,7 @@ I developed and trained the model in **Jupyter Notebook**, achieving **98% accur
 
 ---
 
-## 🚀 Features
+##  Features
 
 * **Resume Upload:** Supports **PDF** and **TXT** formats.
 * **Automatic Text Cleaning:** Removes URLs, emails, special characters, and extra spaces.
